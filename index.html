@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lost & Found</title>
+    
+    <!-- External Dependencies -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <!-- Local Files -->
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="app-container">
+        <!-- Navigation -->
+        <nav class="hidden" id="main-nav">
+            <div class="nav-container">
+                <div class="logo">
+                    <i class="fas fa-search"></i>
+                    <h1>Lost & Found</h1>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#" class="nav-link active" data-page="dashboard-page"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="#" class="nav-link" data-page="report-found-page"><i class="fas fa-check-circle"></i> Report Found</a></li>
+                    <li><a href="#" class="nav-link" data-page="search-page"><i class="fas fa-search"></i> Search Items</a></li>
+                    <li><a href="#" class="nav-link" data-page="image-search-page"><i class="fas fa-camera"></i> Search by Image</a></li>
+                    <li><a href="#" class="nav-link" data-page="chat-help-page"><i class="fas fa-robot"></i> AI Help</a></li>
+                    <li><a href="#" class="nav-link" data-page="hotspots-page"><i class="fas fa-map-marker-alt"></i> Hotspots</a></li>
+                    <li><a href="#" id="logout-btn-nav"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Landing Page -->
+        <section id="landing-page" class="page active">
+            <div class="hero-content">
+                <h2>Find What You've Lost</h2>
+                <p>Reuniting people with their lost items through community power</p>
+                <button class="get-started-btn" id="get-started-btn">
+                    Get Started <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Auth Page -->
+        <section id="auth-page" class="page">
+            <div class="card auth-container">
+                <h2 id="auth-title">Login</h2>
+                <p id="auth-text">Welcome back! Please log in to continue.</p>
+                <input type="email" id="email" placeholder="Enter your email" required>
+                <input type="password" id="password" placeholder="Enter your password" required>
+                <button id="auth-btn">Login</button>
+                <p class="switch">
+                    Don't have an account? <a href="#" id="toggle-auth">Sign Up</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- Dashboard Page -->
+        <section id="dashboard-page" class="page">
+            <div class="card">
+                <h2 class="text-center">Dashboard</h2>
+                <p class="text-center">What would you like to do today?</p>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card" id="report-found-option">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>Report Found Item</h3>
+                        <p>Help reunite someone with their lost belongings</p>
+                    </div>
+                    <div class="dashboard-card" id="search-items-option">
+                        <i class="fas fa-search"></i>
+                        <h3>Search Items</h3>
+                        <p>Browse through lost and found items in your area</p>
+                    </div>
+                    <div class="dashboard-card" id="image-search-option">
+                        <i class="fas fa-camera"></i>
+                        <h3>Search by Image</h3>
+                        <p>Upload a photo to find similar items</p>
+                    </div>
+                    <div class="dashboard-card" id="import-data-option">
+                        <i class="fas fa-database"></i>
+                        <h3>Import Sample Data</h3>
+                        <p>Load sample lost items for testing</p>
+                    </div>
+                    <div class="dashboard-card" id="chat-help-option">
+                        <i class="fas fa-robot"></i>
+                        <h3>AI Assistant</h3>
+                        <p>Get help from our AI chatbot</p>
+                    </div>
+                    <div class="dashboard-card" id="hotspots-option">
+                         <i class="fas fa-map-marker-alt"></i>
+                         <h3>View Hotspots</h3>
+                         <p>See areas where items are commonly lost or found</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Report Found Item Page -->
+        <section id="report-found-page" class="page">
+            <div class="card">
+                <h2>Report Found Item</h2>
+                <input type="text" id="found-item-name" placeholder="Item Name" required>
+                <textarea id="found-item-description" placeholder="Describe the item (color, size, brand, condition)" rows="4" required></textarea>
+                <input type="text" id="found-location" placeholder="Location where found" required>
+                <input type="date" id="found-date" required>
+                
+                <!-- Cloudinary Image Upload Section -->
+                <div class="image-upload-section">
+                    <label>Upload Image (Optional):</label>
+                    <div style="margin: 10px 0;">
+                        <button type="button" id="upload-image-btn" class="upload-btn">
+                            <i class="fas fa-cloud-upload-alt"></i> Choose Image
+                        </button>
+                        <span style="margin-left: 10px; color: #666; font-size: 14px;">Upload via Cloudinary</span>
+                    </div>
+                    <input type="hidden" id="found-item-image" data-cloudinary-url="" data-cloudinary-public-id="">
+                    <div id="image-preview-container"></div>
+                </div>
+                
+                <!-- Contact Details Section -->
+                <div class="contact-section">
+                    <h3>Contact Information</h3>
+                    <input type="text" id="contact-name" placeholder="Your Name" required>
+                    <input type="email" id="contact-email" placeholder="Your Email" required>
+                    <input type="tel" id="contact-phone" placeholder="Your Phone Number (Optional)">
+                    <textarea id="contact-message" placeholder="Additional contact information or instructions" rows="3"></textarea>
+                </div>
+                
+                <button id="report-found-btn-submit">Submit Report</button>
+                <div id="submit-status" style="margin-top: 15px; text-align: center;"></div>
+            </div>
+        </section>
+
+        <!-- Search Page -->
+        <section id="search-page" class="page">
+            <div class="card">
+                <h2>Search Lost & Found Items</h2>
+                <input type="text" id="search-query" placeholder="Search by item name, location, or description...">
+                <div class="search-filters">
+                    <textarea id="search-description" placeholder="Filter by description..." rows="2"></textarea>
+                    <input type="date" id="search-date" placeholder="Filter by date">
+                </div>
+                <button id="search-btn">Search</button>
+                <div id="search-results" class="matches-grid"></div>
+            </div>
+        </section>
+
+        <!-- Image Search Page -->
+        <section id="image-search-page" class="page">
+            <div class="card">
+                <h2>Search by Image</h2>
+                <p>Upload a photo of your lost item to find similar found items</p>
+                
+                <!-- Image Upload Section -->
+                <div class="image-upload-section">
+                    <label>Upload Image of Lost Item:</label>
+                    <div style="margin: 10px 0;">
+                        <button type="button" id="image-search-upload-btn" class="upload-btn">
+                            <i class="fas fa-cloud-upload-alt"></i> Choose Image
+                        </button>
+                        <span style="margin-left: 10px; color: #666; font-size: 14px;">Upload via Cloudinary</span>
+                    </div>
+                    <input type="hidden" id="image-search-input" data-cloudinary-url="" data-cloudinary-public-id="">
+                    <div id="image-search-preview-container"></div>
+                </div>
+
+                <button id="image-search-btn" style="margin-top: 20px;">
+                    <i class="fas fa-search"></i> Search Similar Items
+                </button>
+                
+                <!-- Search Results -->
+                <div id="image-search-results" class="matches-grid" style="margin-top: 30px;"></div>
+                
+                <!-- No Results Message -->
+                <div id="no-image-results" style="display: none; text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-search fa-3x" style="margin-bottom: 20px;"></i>
+                    <h3>No similar items found</h3>
+                    <p>Try uploading a clearer image or check back later.</p>
+                </div>
+            </div>
+        </section>
+        <!-- Hotspots Analysis Page -->
+<section id="hotspots-page" class="page">
+    <div class="card">
+        <h2><i class="fas fa-map-marker-alt"></i> Lost & Found Hotspots</h2>
+        <p>Discover areas where items are commonly lost or found in your community</p>
+        
+        <div class="hotspots-controls">
+            <div class="control-group">
+                <label for="hotspot-radius">Hotspot Radius:</label>
+                <input type="range" id="hotspot-radius" min="100" max="1000" value="500" step="100">
+                <span id="radius-value">500m</span>
+            </div>
+            <div class="control-group">
+                <label for="min-items">Minimum Items:</label>
+                <input type="number" id="min-items" min="1" max="20" value="2">
+            </div>
+            <button id="analyze-hotspots" class="analyze-btn">
+                <i class="fas fa-chart-line"></i> Analyze Hotspots
+            </button>
+        </div>
+
+        <!-- Map Container -->
+        <div id="map-container">
+            <div id="hotspots-map"></div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="hotspots-stats">
+            <h3>Hotspot Analysis</h3>
+            <div id="hotspots-summary" class="stats-cards">
+                <div class="stat-card-small">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Hotspots Found</div>
+                </div>
+                <div class="stat-card-small">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Total Items</div>
+                </div>
+                <div class="stat-card-small">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Avg per Hotspot</div>
+                </div>
+                <div class="stat-card-small">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Largest Hotspot</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hotspots List -->
+        <div class="hotspots-list">
+            <h3>Top Hotspots</h3>
+            <div id="hotspots-ranking">
+                <p>Click "Analyze Hotspots" to see results</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+        <!-- AI Chat Help Page -->
+        <section id="chat-help-page" class="page">
+            <div class="card">
+                <h2><i class="fas fa-robot"></i> AI Assistant</h2>
+                <p>Get instant help with lost and found items from our AI assistant</p>
+                
+                <div class="chat-help-container">
+                    <div class="help-topics">
+                        <h3>Common Questions</h3>
+                        <div class="topic-grid">
+                            <div class="topic-card" data-question="How do I report a found item?">
+                                <i class="fas fa-check-circle"></i>
+                                <h4>Report Found Item</h4>
+                                <p>Step-by-step guide to reporting</p>
+                            </div>
+                            <div class="topic-card" data-question="How to search for lost items effectively?">
+                                <i class="fas fa-search"></i>
+                                <h4>Search Tips</h4>
+                                <p>Best practices for finding items</p>
+                            </div>
+                            <div class="topic-card" data-question="What items are commonly lost?">
+                                <i class="fas fa-list"></i>
+                                <h4>Common Items</h4>
+                                <p>Most frequently lost belongings</p>
+                            </div>
+                            <div class="topic-card" data-question="How does image search work?">
+                                <i class="fas fa-camera"></i>
+                                <h4>Image Search</h4>
+                                <p>Using AI to find similar items</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions section has been removed -->
+                </div>
+                
+                <div class="chat-stats">
+                    <h3>Did You Know?</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <i class="fas fa-mobile-alt"></i>
+                            <div class="stat-number">35%</div>
+                            <div class="stat-label">Phones Found</div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-key"></i>
+                            <div class="stat-number">25%</div>
+                            <div class="stat-label">Keys Recovered</div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-wallet"></i>
+                            <div class="stat-number">20%</div>
+                            <div class="stat-label">Wallets Returned</div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-clock"></i>
+                            <div class="stat-number">48h</div>
+                            <div class="stat-label">Avg. Recovery Time</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Item Detail Page -->
+        <section id="item-detail-page" class="page">
+            <div class="card">
+                <div id="item-detail-content"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Local Scripts -->
+    <!-- Local Scripts -->
+<script src="scripts/firebase-config.js"></script>
+<script src="scripts/ml-classifier.js"></script>
+<script src="scripts/data-importer.js"></script>
+<script src="scripts/chat-ai.js"></script>
+<script src="scripts/hotspots-analyzer.js"></script> 
+<script src="scripts/app.js"></script>
+</body>
+</html>
