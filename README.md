@@ -39,3 +39,10 @@ LOSTANDFOUNDNEW/
 - **HTML, CSS, JavaScript**
 - **Cloudinary** (for image storage)
 - **CSV dataset** for analysis
+
+## 📜 License
+This project is open-source under the MIT License.
+
+## 👩‍💻 Author
+Created by Tanya Maheshwari
+
